@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1560347234977.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "825089473",
+    "id" : "2F80D6B7",
+    "lastKnownWriteTime" : 1560355254,
+    "last_content_update" : 1560411878241,
+    "path" : "~/Documents/@/UBIQUM/DATAML/Week6/Profitability/Profitability/SCRIPTS/Products.Rmd",
+    "project_path" : "SCRIPTS/Products.Rmd",
+    "properties" : {
+        "cursorPosition" : "18,107",
+        "last_setup_crc32" : "4393B745bb338d19",
+        "scrollLine" : "13",
+        "tempName" : "Untitled2"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

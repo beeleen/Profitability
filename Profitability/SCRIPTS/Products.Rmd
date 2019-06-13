@@ -1,0 +1,31 @@
+---
+title: "products"
+output: html_document
+---
+
+
+```{r}
+pacman::p_load(ggplot2, dplyr)
+products2017 <- read.csv("~/Documents/@/UBIQUM/DATAML/Week6/Profitability/Profitability/DATASETS/existingproductattributes2017.csv")
+products2018 <- read.csv("~/Documents/@/UBIQUM/DATAML/Week6/Profitability/Profitability/DATASETS/existingproductattributesPast.csv")
+
+products2017Num <- products2017[c(-1,-2)]
+str(products2017Num)
+# 
+for (col in 1:ncol(products2017Num)) { 
+  hist(products2017Num[,col], main = names(products2017Num[col]), xlab=colnames(products2017Num[col]), border = "black", col = "#bcd4e6", breaks=50 )}
+
+for (col in 1:ncol(products2017Num)) { 
+  boxplot(products2017Num[,col], main = names(products2017Num[col]), xlab=colnames(products2017Num[col]), border = "black", col = "#bcd4e6" )}
+
+
+  
+# box_plot <- boxplot(products2017[, c("distance.of.car","speed.of.car")])
+  
+
+  
+
+
+
+```
+
