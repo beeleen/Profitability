@@ -48,10 +48,10 @@ plot(products2017_ctree)
 corrData <- cor(products2017Num)
 corrplot(corrData)
 
-#Combine variables A
+#Select variables. A. Without 5StarReviews
 products2017CombA <- products2017[c(-2, -4)]
 
-#Decision Tree A
+#Decision Tree. A
 products2017_ctreeA <- ctree(Volume ~ ., data=products2017CombA, controls = ctree_control(maxdepth = 4))
 plot(products2017_ctreeA)
 
@@ -61,58 +61,127 @@ plot(products2017_ctreeA)
 
 #Join the Stars Attributes because they are very correlated
 
-products2017CombMerg <- products2017[c(-5:-8)]
 products2017CombMerg <- products2017
+products2017CombMerg <- products2017[c(-4:-8)]
 products2017CombMerg$GoodReviews <- products2017$x4StarReviews + products2017$x3StarReviews
 products2017CombMerg$BadReviews <- products2017$x2StarReviews + products2017$x1StarReviews
 
 
 #Decision Tree B
-products2017_ctreeB <- ctree(Volume ~ ., data=products2017CombMerg, controls = ctree_control(maxdepth = 4))
+products2017_ctreeB <- ctree(Volume ~ ., data=products2017CombMerg, controls = ctree_control(maxdepth = 10))
 plot(products2017_ctreeB)
 
+#Select variables:: Feature Eng. B.2 Without 5StarReviews, Without Categorical Variables
+products2017CombMerg2 <- products2017CombMerg[c(-1, -2)]
+
+#Correlation Matrix B
+corrDataMerg2 <- cor(products2017CombMerg2)
+corrplot(corrDataMerg2)
 
 
-#So let's analyze how is the distribution of each of the StarReviews
+# Visualize the data. B
+for (col in 1:ncol(products2017CombMerg2)) {
+  hist(products2017CombMerg2[,col], main = names(products2017CombMerg2[col]), xlab=colnames(products2017CombMerg2[col]), border = "black", col = "#bcd4e6", breaks=200 )}
 
-x4StarNums <- products2017 %>% group_by(x4StarReviews) %>% summarise (n = n()) 
+#There are some outliers in PositiveServiceReview and in the GoodReviews and BadReviews.
+#So let's analyze how is their distribution
 
-#detect outliers for 4StarReviews
-x5StarNums <- products2017 %>% group_by(x5StarReviews) %>% summarise (n = n()) 
-x5StarOutliers <- products2017 %>% filter(x5StarReviews > 1000) #Product 150, 198
-x5StarOutliers2 <- products2017 %>% filter(x5StarReviews == '308' ) 
-#Product 150, 198
+GoodReviewsNums <- products2017CombMerg %>% group_by(GoodReviews) %>% summarise (n = n()) 
+GoodReviewsOutliers <- products2017CombMerg %>% filter(GoodReviews == '35')
 
-x4StarOutliers <- products2017 %>% filter(x4StarReviews > 100)
+#Products from 134 to 141 are duplicated (the only difference between them is the price)
+#So let's remove them
+
+#Select Rows:: Feature Eng. C Without duplicated rows
+products2017CombMergClean <- products2017CombMerg[-c(34:41),]
+
+#Select Rows:: Feature Eng. D All variables withour duplicated rows
+products2017Clean <- products2017[-c(34:41),]
+
+#Decision Tree C
+products2017_ctreeC <- ctree(Volume ~ ., data=products2017CombMergClean, controls = ctree_control(maxdepth = 10))
+plot(products2017_ctreeC)
+
+
+#Creating dummy variables------
+#Select variables:: Feature Eng. C.2 Without Categorical Variables
+products2017CombMergClean2 <- products2017CombMergClean[c(-1, -2)]
+
+
+# Visualize the data. C
+for (col in 1:ncol(products2017CombMergClean2)) {
+  hist(products2017CombMergClean2[,col], main = names(products2017CombMergClean2[col]), xlab=colnames(products2017CombMergClean2[col]), border = "black", col = "#bcd4e6", breaks=200 )}
+
+ggplot(products2017CombMergClean, aes(x=ProductType, fill=Volume)) + geom_bar()
+
+
+#We can see that there are still many outliers. 
+
+#Detect outliers from the Standard Deviation
+
+
+findOutlier <- function(products2017Clean, cutoff = 3) {
+    ## Calculate the sd
+    sdproducts2017Clean <- apply(products2017Clean, 2, sd, na.rm = TRUE)
+    ## Identify the cells with value greater than cutoff * sd (column wise)
+    result <- mapply(function(d, s) {
+        which(d > cutoff * s)
+    }, products2017Clean, sdproducts2017Clean)
+    result
+}
+
+outliers <- findOutlier(products2017Clean)
+outliers
+
+
+removeOutlier <- function(products2017Clean, outliers) {
+    result <- mapply(function(d, o) {
+        res <- d
+        res[o] <- NA
+        return(res)
+    }, products2017Clean, outliers)
+    return(as.data.frame(result))
+}
+
+#adding again the product numbers
+products2017CleanFilter$ProductNum <- products2017Clean$ProductNum 
+
+#adding NA to the outliers
+products2017CleanFilter <- removeOutlier(products2017Clean, outliers)
+products2017CleanFilter$NumOutliers <- apply(products2017CleanFilter, 1, function(x) sum(is.na(x))-1)
+
+nrow(is.na(products2017CleanFilter))
+
+hist(products2017CleanFilter$NumOutliers)
+hist(products2017CleanFilter$Price)
+hist(products2017Clean$Price)
+
+products2017Clean %>% filter(Price > 1000) 
+
+
+#RecommendProduct results had many outliers. Why?
+plot(products2017$Recommendproduct)
+hist(products2017$Recommendproduct)
+RecommendNums <- products2017Clean %>% group_by(Recommendproduct) %>% summarise (n = n()) 
+RecommendproductOutliers <- products2017Clean %>% filter(Recommendproduct > 0.6) #Product 150, 198
+
+#See the rows with more outliers and compare it with the table with the NA's
+GeneralOutliers <- products2017Clean %>% filter(ProductNum == '198'| ProductNum == '150'| ProductNum ==  '102'|  ProductNum == '123'| ProductNum ==  '128'|  ProductNum == '148' )
+
+#Conlusion about Outliers: 1. Products 123, 150, 198 should be removed because the have many outliers. 2. The attribute Recommendproduct has many otliers and should be removed. 3. The products with high price wont be deleted yet, first let's compare the models with and without them.
+
+
+#Remove rows with outliers
+ 
+OutlierstoRemove <- c(198,150,123)
+products2017Clean2 <- products2017Clean %>% filter(!ProductNum %in% OutlierstoRemove )
+
+products2017Clean2
+#RecommendProduct
 
 
 
 
-
-
-
-
-
-
-
-#priceNums <- products2017 %>% group_by(Price) %>% summarise (n = n()) 
-###the same but in different way >>> priceNums <-  summarise(group_by(products2017Num, Price), (n = n()))
-
-NegativeNums  <- products2017 %>% group_by(NegativeServiceReview) %>% summarise (n = n()) 
-PositiveNums <- products2017 %>% group_by(PositiveServiceReview) %>% summarise (n = n()) 
-
-#detect outliers for PositiveServiceReview
-positiveServiceOutliers <- products2017 %>% filter(PositiveServiceReview == '280')
-#remove outliers 
-#products2017 <- products2017[-c(36:41),]
-
-#detect outliers for NegativeServiceReview
-negativeServiceOutliers <- products2017 %>% filter(NegativeServiceReview == '112')
-
-#remove outlier because is clearly more different in every attribute
-#products2017 <- products2017[-c(23),]
-
-hist(products2017$PositiveServiceReview)
 
 
 
