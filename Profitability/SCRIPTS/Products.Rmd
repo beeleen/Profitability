@@ -144,7 +144,7 @@ removeOutlier <- function(products2017Clean, outliers) {
 }
 
 #adding again the product numbers
-products2017CleanFilter$ProductNum <- products2017Clean$ProductNum 
+#products2017CleanFilter$ProductNum <- products2017Clean$ProductNum 
 
 #adding NA to the outliers
 products2017CleanFilter <- removeOutlier(products2017Clean, outliers)
