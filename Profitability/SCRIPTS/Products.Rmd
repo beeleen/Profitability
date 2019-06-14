@@ -5,27 +5,126 @@ output: html_document
 
 
 ```{r}
-pacman::p_load(ggplot2, dplyr)
+pacman::p_load(ggplot2, dplyr, party, caret, corrplot)
 products2017 <- read.csv("~/Documents/@/UBIQUM/DATAML/Week6/Profitability/Profitability/DATASETS/existingproductattributes2017.csv")
 products2018 <- read.csv("~/Documents/@/UBIQUM/DATAML/Week6/Profitability/Profitability/DATASETS/existingproductattributesPast.csv")
 
+
+#Remove Na
+# ncol(is.na(products2017))
+# summary(is.na(products2017))
+# na.omit(products2017)
+# summary(products2017)
+# complete.cases(products2017)
+# str(products2017)
+# products2017 <-  products2017[complete.cases(products2017),]
+# str(products2017)
+
+#Remove the column with Na
+products2017$BestSellersRank <- NULL
+
+#Find patterns in the data
+
+#Select only numeric values Just for the PLOTS and the CORRELATION MATRIX V.1
 products2017Num <- products2017[c(-1,-2)]
 str(products2017Num)
+
+# Visualize the data. First approach 
+# for (col in 1:ncol(products2017Num)) { 
+#   hist(products2017Num[,col], main = names(products2017Num[col]), xlab=colnames(products2017Num[col]), border = "black", col = "#bcd4e6", breaks=50 )}
 # 
-for (col in 1:ncol(products2017Num)) { 
-  hist(products2017Num[,col], main = names(products2017Num[col]), xlab=colnames(products2017Num[col]), border = "black", col = "#bcd4e6", breaks=50 )}
-
-for (col in 1:ncol(products2017Num)) { 
-  boxplot(products2017Num[,col], main = names(products2017Num[col]), xlab=colnames(products2017Num[col]), border = "black", col = "#bcd4e6" )}
+# for (col in 1:ncol(products2017Num)) { 
+#   boxplot(products2017Num[,col], main = names(products2017Num[col]), xlab=colnames(products2017Num[col]), border = "black", col = "#bcd4e6" )}
 
 
-  
-# box_plot <- boxplot(products2017[, c("distance.of.car","speed.of.car")])
-  
-
-  
 
 
+#Decision Tree 1
+products2017_ctree <- ctree(Volume ~ ., data=products2017, controls = ctree_control(maxdepth = 4))
+
+plot(products2017_ctree)
+
+#Correlation Matrix
+corrData <- cor(products2017Num)
+corrplot(corrData)
+
+#Combine variables A
+products2017CombA <- products2017[c(-2, -4)]
+
+#Decision Tree A
+products2017_ctreeA <- ctree(Volume ~ ., data=products2017CombA, controls = ctree_control(maxdepth = 4))
+plot(products2017_ctreeA)
+
+#Positive and 4StarReviews are the most important variables. 
+
+#FEATURE ENGINEERING
+
+#Join the Stars Attributes because they are very correlated
+
+products2017CombMerg <- products2017[c(-5:-8)]
+products2017CombMerg <- products2017
+products2017CombMerg$GoodReviews <- products2017$x4StarReviews + products2017$x3StarReviews
+products2017CombMerg$BadReviews <- products2017$x2StarReviews + products2017$x1StarReviews
+
+
+#Decision Tree B
+products2017_ctreeB <- ctree(Volume ~ ., data=products2017CombMerg, controls = ctree_control(maxdepth = 4))
+plot(products2017_ctreeB)
+
+
+
+#So let's analyze how is the distribution of each of the StarReviews
+
+x4StarNums <- products2017 %>% group_by(x4StarReviews) %>% summarise (n = n()) 
+
+#detect outliers for 4StarReviews
+x5StarNums <- products2017 %>% group_by(x5StarReviews) %>% summarise (n = n()) 
+x5StarOutliers <- products2017 %>% filter(x5StarReviews > 1000) #Product 150, 198
+x5StarOutliers2 <- products2017 %>% filter(x5StarReviews == '308' ) 
+#Product 150, 198
+
+x4StarOutliers <- products2017 %>% filter(x4StarReviews > 100)
+
+
+
+
+
+
+
+
+
+
+
+#priceNums <- products2017 %>% group_by(Price) %>% summarise (n = n()) 
+###the same but in different way >>> priceNums <-  summarise(group_by(products2017Num, Price), (n = n()))
+
+NegativeNums  <- products2017 %>% group_by(NegativeServiceReview) %>% summarise (n = n()) 
+PositiveNums <- products2017 %>% group_by(PositiveServiceReview) %>% summarise (n = n()) 
+
+#detect outliers for PositiveServiceReview
+positiveServiceOutliers <- products2017 %>% filter(PositiveServiceReview == '280')
+#remove outliers 
+#products2017 <- products2017[-c(36:41),]
+
+#detect outliers for NegativeServiceReview
+negativeServiceOutliers <- products2017 %>% filter(NegativeServiceReview == '112')
+
+#remove outlier because is clearly more different in every attribute
+#products2017 <- products2017[-c(23),]
+
+hist(products2017$PositiveServiceReview)
+
+
+
+
+
+
+
+
+
+
+# box_plot <- boxplot(products2017[, c("","")])
+#sort(products2017Num$NegativeServiceReview)  
 
 ```
 
