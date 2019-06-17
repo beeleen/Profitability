@@ -1,0 +1,155 @@
+---
+title: "Products2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+``` {r echo=TRUE}
+pacman::p_load(ggplot2, dplyr, party, caret, corrplot, reshape, rpart, rattle)
+products2017 <- read.csv("~/Documents/@/UBIQUM/DATAML/Week6/Profitability/Profitability/DATASETS/existingproductattributes2017.csv")
+reset.seed <- function()
+{
+  # ensure results are repeatable
+  set.seed(1337)
+}
+
+
+#Remove the column with Na
+products2017$BestSellersRank <- NULL
+
+#Remove RecommendationRatio
+products2017$Recommendproduct <- NULL
+
+#Remove x5StarReviews
+products2017$x5StarReviews <- NULL
+##Remove duplicated Products
+#duplicatedValues <- c(135: 141)
+
+
+#Remove rows with outliers
+OutlierstoRemove <- c(135:141, 198,150,123)
+products2017Clean <- products2017 %>% filter(!ProductNum %in% OutlierstoRemove )
+
+#Normalize
+
+# data_norm <- as.data.frame(apply(products2017Clean[, 3:length(  products2017Clean)], 2, function(x) (x - min(x))/(max(x)-min(x))))
+# 
+# products2017Clean2 <- products2017[-c(1,2)]
+
+####Models
+
+intrain <- createDataPartition(y = products2017Clean$Volume, p= 0.7, list = FALSE)
+train <- products2017Clean[intrain, ]
+test <-  products2017Clean[-intrain, ]
+
+#Base test
+reset.seed()
+rtree_model <- rpart(Volume~x4StarReviews + PositiveServiceReview, data=train, control=rpart.control(maxdepth=10))
+rtree_model
+
+fancyRpartPlot(rtree_model) 
+
+
+
+#Random Forest
+
+ctrl <- trainControl(method ="repeatedcv", repeats = 3, classProbs = TRUE, summaryFunction = multiClassSummary) 
+
+rfGrid <- expand.grid(mtry=c(1,2,3,4,5))
+plsFit <- train(Volume ~ x4StarReviews + PositiveServiceReview, data = train, method = "rf",tuneLength = 2, tuneGrid=rfGrid, metric = "usage", preProc = c("center", "scale")) 
+                               
+
+
+
+####Model Random Forest
+
+intrain2 <- createDataPartition(y = products2017Clean2$Volume, p= 0.7, list = FALSE)
+train2 <- products2017Clean2[intrain2, ]
+test2 <-  products2017Clean2[-intrain2, ]
+
+ctrl <- trainControl(method ="repeatedcv", repeats = 10, classProbs = TRUE, summaryFunction = twoClassSummary) 
+
+
+plsFit <- train(Volume ~ x4StarReviews + PositiveServiceReview, data = train2, method = "rf",tuneLength = 2,metric = "usage", preProc = c("center", "scale")) 
+                       
+plsFit        
+
+# methodsAdd <- c("lm", "knn", "rf", "svm" )
+# 
+# 
+# combined <- c()
+# for (i in 1:length(methodsAdd)) { 
+# models <- train(Volume ~ .,data = data_norm ,method = methodsAdd[i])
+# 
+# predictModels <-predict(models, test)
+# postModels <-  postResample(predictModels, test$Volume)
+# combined <- cbind(postModels, combined)
+# }
+# 
+# colnames(combined) <- c(methodsAdd)
+# combined
+# 
+# combined_melt <- melt(combined, varnames = c("metric", "model"))
+
+#gggrid <-  ggplot(combined_melt, aes(metric,value)) + geom_col()
+#gggrid + facet_wrap(~Volume, scales = "free_x" )
+
+
+
+
+
+
+
+
+
+#Test Models: Set a combination of variables and methods for the models
+
+a <- c("Volume ~ x4StarReviews", "Volume ~ x4StarReviews + PositiveServiceReview", "Volume ~ x4StarReviews + PositiveServiceReview + Price")  
+b <- c("lm", "knn", "rf")
+compare_var_mod <- c()
+
+for ( i in a) {
+  for (j in b) {
+  
+  model <- train(formula(i), data = products2017Clean, method = j)
+  
+  pred <- predict(model, newdata = test)
+  
+  pred_metric <- postResample(test$Volume, pred)
+  
+  compare_var_mod <- cbind(compare_var_mod , pred_metric)
+  
+  }
+  
+}
+
+ names_var <- c()
+for (i in a) {
+  for(j in b) {
+ names_var <- append(names_var,paste(i,j))
+  }
+  }
+
+
+colnames(compare_var_mod) <- names_var
+
+compare_var_mod
+
+
+
+
+
+
+
+
+###Applying the model
+
+plsVolume <- predict(plsFit, newdata = testing)
+str(plsBrand)
+
+
+
+```
