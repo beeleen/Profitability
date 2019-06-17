@@ -176,7 +176,6 @@ GeneralOutliers <- products2017Clean %>% filter(ProductNum == '198'| ProductNum 
 OutlierstoRemove <- c(198,150,123)
 products2017Clean2 <- products2017Clean %>% filter(!ProductNum %in% OutlierstoRemove )
 
-products2017Clean2
 #RecommendProduct
 
 
