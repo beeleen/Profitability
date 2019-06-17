@@ -36,7 +36,7 @@ str(products2017Num)
 # for (col in 1:ncol(products2017Num)) { 
 #   boxplot(products2017Num[,col], main = names(products2017Num[col]), xlab=colnames(products2017Num[col]), border = "black", col = "#bcd4e6" )}
 
-
+ProductsByType <- products2017 %>% group_by(ProductType) %>% summarise (n = n()) 
 
 
 #Decision Tree 1
